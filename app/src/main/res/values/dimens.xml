@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="margin_left">15dp</dimen>
+    <dimen name="poi_title_size">16sp</dimen>
+    <dimen name="poi_text_size">14sp</dimen>
+</resources>
