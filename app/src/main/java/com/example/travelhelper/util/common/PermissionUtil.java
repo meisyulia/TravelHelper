@@ -1,5 +1,6 @@
 package com.example.travelhelper.util.common;
 
+import android.annotation.TargetApi;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
@@ -12,6 +13,10 @@ import android.widget.Toast;
 
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+
+import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.List;
 
 public class PermissionUtil {
     private final static String TAG = "PermissionUtil";
@@ -76,6 +81,102 @@ public class PermissionUtil {
     public static void goActivity(Context ctx, Class<?> cls) {
         Intent intent = new Intent(ctx, cls);
         ctx.startActivity(intent);
+    }
+
+    /**
+     * @param
+     * @since 2.5.0
+     */
+    @TargetApi(23)
+    public static void checkPermissions(Activity act,String... permissions) {
+        try{
+            if (Build.VERSION.SDK_INT >= 23 && act.getApplicationInfo().targetSdkVersion >= 23) {
+                List<String> needRequestPermissonList = findDeniedPermissions(act,permissions);
+                if (null != needRequestPermissonList
+                        && needRequestPermissonList.size() > 0) {
+                    try {
+                        String[] array = needRequestPermissonList.toArray(new String[needRequestPermissonList.size()]);
+                        Method method = act.getClass().getMethod("requestPermissions", new Class[]{String[].class, int.class});
+                        method.invoke(act, array, 0);
+                    } catch (Throwable e) {
+
+                    }
+                }
+            }
+
+        }catch(Throwable e){
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * 获取权限集中需要申请权限的列表
+     *
+     * @param permissions
+     * @return
+     * @since 2.5.0
+     */
+    @TargetApi(23)
+    private static List<String> findDeniedPermissions(Activity act,String[] permissions) {
+        try{
+            List<String> needRequestPermissonList = new ArrayList<String>();
+            if (Build.VERSION.SDK_INT >= 23 && act.getApplicationInfo().targetSdkVersion >= 23) {
+                for (String perm : permissions) {
+                    if (checkMySelfPermission(act,perm) != PackageManager.PERMISSION_GRANTED
+                            || shouldShowMyRequestPermissionRationale(act,perm)) {
+                        /*if(!needCheckBackLocation
+                                && BACK_LOCATION_PERMISSION.equals(perm)) {
+                            continue;
+                        }*/
+                        needRequestPermissonList.add(perm);
+                    }
+                }
+            }
+            return needRequestPermissonList;
+        }catch(Throwable e){
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    private static int checkMySelfPermission(Activity act,String perm) {
+        try {
+            Method method = act.getClass().getMethod("checkSelfPermission", new Class[]{String.class});
+            Integer permissionInt = (Integer) method.invoke(act, perm);
+            return permissionInt;
+        } catch (Throwable e) {
+        }
+        return -1;
+    }
+
+    private static boolean shouldShowMyRequestPermissionRationale(Activity act,String perm) {
+        try {
+            Method method = act.getClass().getMethod("shouldShowRequestPermissionRationale", new Class[]{String.class});
+            Boolean permissionInt = (Boolean) method.invoke(act, perm);
+            return permissionInt;
+        } catch (Throwable e) {
+        }
+        return false;
+    }
+
+    /**
+     * 检测是否说有的权限都已经授权
+     *
+     * @param grantResults
+     * @return
+     * @since 2.5.0
+     */
+    private boolean verifyPermissions(int[] grantResults) {
+        try{
+            for (int result : grantResults) {
+                if (result != PackageManager.PERMISSION_GRANTED) {
+                    return false;
+                }
+            }
+        }catch(Throwable e){
+            e.printStackTrace();
+        }
+        return true;
     }
 
 }
